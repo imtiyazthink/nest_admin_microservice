@@ -10,16 +10,19 @@ export class ProductController {
 
     @Get()
     async all() {
-        this.client.emit<any>('hello', new Message('Hello World'))        
         return this.productService.all();
     }
 
     @Post()
     async create(@Body('title') title: string, @Body('content') content: string) {
-        return this.productService.create({
+        const product = await this.productService.create({
             title,
             content
         })
+
+        this.client.emit('product_created', product);
+
+        return product;
     }
 
     @Get(':id')
@@ -31,13 +34,22 @@ export class ProductController {
     async update(@Param('id') id: number,
         @Body('title') title: string,
         @Body('content') content: string) {
-        return this.productService.update(id, {
+
+        await this.productService.update(id, {
             title, content
-        })
+        });
+
+        const product = await this.productService.getById(id);
+
+        this.client.emit('product_updated', product);
+
+        return product;
     }
 
     @Delete(':id')
     async delete(@Param('id') id: number) {
-        return this.productService.delete(id);
+        await this.productService.delete(id);
+
+        this.client.emit('product_deleted', id)
     }
 }
